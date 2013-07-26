@@ -70,6 +70,28 @@ def reporter_login(id,input_dict):
 			name=element["login"]
 	return name
 
+def ticket_milestone(id,input_dict):
+	name=""
+	for element in input_dict[2]["milestones"]:
+		if element["id"] == id:
+			name=element["title"]
+	return name
+
+def ticket_status(id):
+	ticket_statuses={5400083:"Open",5400093:"In Progress",5400103:"Closed",5400113:"Closed",5400123:"In Progress",6047193:"Open",6047203:"Open",6047213:"Closed",8325293:"Open",8353403:"Open",8618813:"Open" }
+	return ticket_statuses[id]
+
+comments_output = {}
+for element in data_input[7]["ticket_comments"]:
+	ticket_id=element["ticket_id"]
+	if element["comment"] != '':
+		if ticket_id not in comments_output:
+			comments_output[ticket_id] = ''
+		else:
+			comments_output[ticket_id] += ','
+		comments_output[ticket_id] += '{"author":'+json.dumps(reporter_login(element["user_id"],data_input))+','
+		comments_output[ticket_id] += '"body":'+json.dumps(element["comment"])+','
+		comments_output[ticket_id] += '"created":"'+element["created_on"]+'"}'
 
 issues_output = {}
 for element in data_input[4]["tickets"]:
@@ -80,13 +102,19 @@ for element in data_input[4]["tickets"]:
 		issues_output[space_id] += ','
 	issues_output[space_id] += '{"summary":'+json.dumps(element["summary"])+','
 	issues_output[space_id] += '"description":'+json.dumps(element["description"])+','
+	issues_output[space_id] += '"status":'+json.dumps(ticket_status(element["ticket_status_id"]))+','
 	issues_output[space_id] += '"reporter":'+json.dumps(reporter_login(element["reporter_id"],data_input))+','
 	issues_output[space_id] += '"assignee":'+json.dumps(reporter_login(element["assigned_to_id"],data_input))+','
 	issues_output[space_id] += '"created":"'+element["created_on"]+'",'
+	if element["milestone_id"] is not None:
+		issues_output[space_id] += '"fixedVersions":['+json.dumps(ticket_milestone(element["milestone_id"],data_input))+'],'
 	if element["updated_at"] is not None:
 		issues_output[space_id] += '"updated":"'+element["updated_at"]+'",'
 	if element["completed_date"] is not None:
+		issues_output[space_id] += '"resolution":"Resolved",'
 		issues_output[space_id] += '"resolutionDate":"'+element["completed_date"]+'",'
+	if element["id"] in comments_output:
+		issues_output[space_id] += '"comments":['+comments_output[element["id"]]+'],'
 	issues_output[space_id] += '"externalId":"'+str(element["number"])+'"}'
 
 project_output = ''
