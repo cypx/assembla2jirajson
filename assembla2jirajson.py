@@ -41,8 +41,10 @@ for i, element in enumerate(data_input[0]["users"]):
 	if i < len(data_input[0]["users"])-1:
 		users_output += ','
 
-milestones_output = ''
-for i, element in enumerate(data_input[2]["milestones"]):
+milestones_output = {}
+for element in data_input[2]["milestones"]:
+	space_id=element["space_id"]
+	print "space_id: "+space_id
 	if element["is_completed"]==1:
 		released='true'
 	else:
@@ -51,9 +53,13 @@ for i, element in enumerate(data_input[2]["milestones"]):
 		releaseDate=''
 	else:
 		releaseDate=str(element["due_date"])+'T00:00:00+00:00'
-	milestones_output +=  '{"name":"'+element["title"]+'","released":'+released+',"releaseDate":"'+releaseDate+'"}'
-	if i < len(data_input[2]["milestones"])-1:
-		milestones_output += ','	
+	if space_id not in milestones_output:
+		milestones_output[space_id] =  '{"name":"'+element["title"]+'","released":'+released+',"releaseDate":"'+releaseDate+'"}'
+	else:
+		milestones_output[space_id] +=  ',{"name":"'+element["title"]+'","released":'+released+',"releaseDate":"'+releaseDate+'"}'
+
+
+	
 
 project_output = ''
 for i, element in enumerate(data_input[1]["spaces"]):
@@ -61,8 +67,7 @@ for i, element in enumerate(data_input[1]["spaces"]):
 	project_output += '"key":"'+element["name"][0:3]+'",'
 	if element["description"] != "":
 		project_output += '"description":"'+element["description"]+'",'
-	project_output += '"versions":['+milestones_output+'],"components": ["Component","AnotherComponent"]}'
-	#project_output += '"version":['+milestones_output+']}'
+	project_output += '"versions":['+milestones_output[element["id"]]+'],"components": ["Component","AnotherComponent"]}'
 	if i < len(data_input[1]["spaces"])-1:
 		project_output += ','
 
