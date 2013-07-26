@@ -35,29 +35,41 @@ with open(file_input) as f:
 for s in input_field:
 	data_input.append(json.loads('{"'+s[:-2]+'": ['+input_dict[s]+']}'))
 
-
-#data_input.append(json.loads('{"users": ['+input_dict['users, ']+']}'))
-#data_input.append(json.loads('{"user_tasks": ['+input_dict['user_tasks, ']+']}'))
-#data_input.append(json.loads('{"tickets": ['+input_dict['tickets, ']+']}'))
-
-print len(data_input[0]["users"])
-
 users_output = ''
 for i, element in enumerate(data_input[0]["users"]):
 	users_output += '{"name":"'+element["login"]+'","fullname": "'+element["fullname"]+'"}'
 	if i < len(data_input[0]["users"])-1:
 		users_output += ','
 
+milestones_output = ''
+for i, element in enumerate(data_input[2]["milestones"]):
+	if element["is_completed"]==1:
+		released='true'
+	else:
+		released='false'
+	if element["due_date"] is None:
+		releaseDate=''
+	else:
+		releaseDate=str(element["due_date"])+'T00:00:00+00:00'
+	milestones_output +=  '{"name":"'+element["title"]+'","released":'+released+',"releaseDate":"'+releaseDate+'"}'
+	if i < len(data_input[2]["milestones"])-1:
+		milestones_output += ','	
 
-#for element in data_input[2]["tickets"]:
-#	print element["summary"]
+project_output = ''
+for i, element in enumerate(data_input[1]["spaces"]):
+	project_output += '{"name":"'+element["name"]+'",'
+	project_output += '"key":"'+element["name"][0:3]+'",'
+	if element["description"] != "":
+		project_output += '"description":"'+element["description"]+'",'
+	project_output += '"versions":['+milestones_output+'],"components": ["Component","AnotherComponent"]}'
+	#project_output += '"version":['+milestones_output+']}'
+	if i < len(data_input[1]["spaces"])-1:
+		project_output += ','
 
-
-data_output.append(json.loads('{"users": ['+users_output+']}'))
-
-
-
+data_output.append(json.loads('{"users": ['+users_output+'],"projects": ['+project_output+']}'))
 
 
 with open(file_output, 'wb') as f:
-	f.write(json.dumps(data_output))
+	f.write((json.dumps(data_output))[1:-1])
+
+
