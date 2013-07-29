@@ -21,7 +21,7 @@ multiple_input ={}
 for s in input_field:
 	input_dict[s] = ''
 
-#read input file and save wanted line into destination key 
+#read input file and save wanted line into destination key
 with open(file_input) as f:
 	for line in f:
 		for s in input_field:
@@ -81,6 +81,11 @@ def ticket_status(id):
 	ticket_statuses={5400083:"Open",5400093:"In Progress",5400103:"Closed",5400113:"Closed",5400123:"In Progress",6047193:"Open",6047203:"Open",6047213:"Closed",8325293:"Open",8353403:"Open",8618813:"Open" }
 	return ticket_statuses[id]
 
+def ticket_priority(id):
+	ticket_priorities={1:"Blocker",2:"Critical",3:"Major",4:"Minor",5:"Trivial"}
+	return ticket_priorities[id]
+
+
 comments_output = {}
 for element in data_input[7]["ticket_comments"]:
 	ticket_id=element["ticket_id"]
@@ -115,12 +120,14 @@ for element in data_input[4]["tickets"]:
 		issues_output[space_id] += '"resolutionDate":"'+element["completed_date"]+'",'
 	if element["id"] in comments_output:
 		issues_output[space_id] += '"comments":['+comments_output[element["id"]]+'],'
+	if element["priority"] is not None:
+		issues_output[space_id] += '"priority":'+json.dumps(ticket_priority(element["priority"]))+','
 	issues_output[space_id] += '"externalId":"'+str(element["number"])+'"}'
 
 project_output = ''
 for i, element in enumerate(data_input[1]["spaces"]):
 	project_output += '{"name":'+json.dumps(element["name"])+','
-	project_output += '"key":"'+element["name"][0:3]+'",'
+	project_output += '"key":"'+element["name"]+'",'
 	if element["description"] != "":
 		project_output += '"description":'+json.dumps(element["description"])+','
 	project_output += '"versions":['+versions_output[element["id"]]+'],'
