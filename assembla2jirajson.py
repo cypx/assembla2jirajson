@@ -13,7 +13,6 @@ file_output = sys.argv[2]
 
 input_field = ['users, ','spaces, ','milestones, ','ticket_statuses, ','tickets, ','estimate_histories, ','user_tasks, ','ticket_comments, ','ticket_associations, ']
 input_dict = {}
-multiple_input ={}
 
 #Assembla export file is not a regular json first we serialize data we want to use
 
@@ -33,13 +32,35 @@ with open(file_input) as f:
 
 #Convert saved line into standard json data
 for s in input_field:
-	#data_input.append(json.loads('{"'+s[:-2]+'": ['+json.dumps(input_dict[s])+']}'))
 	data_input.append(json.loads('{"'+s[:-2]+'": ['+input_dict[s]+']}'))
 
-#Convert input string according to JSON encoding
-
-
 #Now we can convert JSON data according to JIRA JSON schema
+
+# Some function to return JIRA association and convert value between Assembla and Jira
+
+def reporter_login(id,input_dict):
+	name=""
+	for element in input_dict[0]["users"]:
+		if element["id"] == id:
+			name=element["login"]
+	return name
+
+def ticket_milestone(id,input_dict):
+	milestone=""
+	for element in input_dict[2]["milestones"]:
+		if element["id"] == id:
+			milestone=element["title"]
+	return milestone
+
+def ticket_status(id):
+	ticket_statuses={5400083:"Open",5400093:"In Progress",5400103:"Closed",5400113:"Closed",5400123:"In Progress",6047193:"Open",6047203:"Open",6047213:"Closed",8325293:"Open",8353403:"Open",8618813:"Open" }
+	return ticket_statuses[id]
+
+def ticket_priority(id):
+	ticket_priorities={1:"Blocker",2:"Critical",3:"Major",4:"Minor",5:"Trivial"}
+	return ticket_priorities[id]
+
+#Convert input string according to JSON encoding
 
 users_output = ''
 for i, element in enumerate(data_input[0]["users"]):
@@ -62,29 +83,6 @@ for element in data_input[2]["milestones"]:
 		versions_output[space_id] =  '{"name":'+json.dumps(element["title"])+',"released":'+released+',"releaseDate":"'+releaseDate+'"}'
 	else:
 		versions_output[space_id] +=  ',{"name":'+json.dumps(element["title"])+',"released":'+released+',"releaseDate":"'+releaseDate+'"}'
-
-def reporter_login(id,input_dict):
-	name=""
-	for element in input_dict[0]["users"]:
-		if element["id"] == id:
-			name=element["login"]
-	return name
-
-def ticket_milestone(id,input_dict):
-	name=""
-	for element in input_dict[2]["milestones"]:
-		if element["id"] == id:
-			name=element["title"]
-	return name
-
-def ticket_status(id):
-	ticket_statuses={5400083:"Open",5400093:"In Progress",5400103:"Closed",5400113:"Closed",5400123:"In Progress",6047193:"Open",6047203:"Open",6047213:"Closed",8325293:"Open",8353403:"Open",8618813:"Open" }
-	return ticket_statuses[id]
-
-def ticket_priority(id):
-	ticket_priorities={1:"Blocker",2:"Critical",3:"Major",4:"Minor",5:"Trivial"}
-	return ticket_priorities[id]
-
 
 comments_output = {}
 for element in data_input[7]["ticket_comments"]:
@@ -135,6 +133,8 @@ for i, element in enumerate(data_input[1]["spaces"]):
 	project_output += '"components": ["Component","AnotherComponent"]}'
 	if i < len(data_input[1]["spaces"])-1:
 		project_output += ','
+
+#Create JSON data and write it to export file
 
 data_output.append(json.loads('{"users": ['+users_output+'],"projects": ['+project_output+']}'))
 

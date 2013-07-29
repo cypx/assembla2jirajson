@@ -39,3 +39,6 @@ nosetests.xml
 
 # Test
 test
+
+# Sublime Text
+*.sublime-workspace
