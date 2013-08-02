@@ -23,7 +23,8 @@ To be imported, this file need to be put into the root of an unique folder, unde
     $ find /path_where_you_extract_content -type f -exec mv '{}' ./ \;
 
 Now move this folder with all this file into a location accessible by http from you jira install, for exemple:
- http://mydomain.com/my-content-folder/
+
+http://mydomain.com/my-content-folder/
 
 Copy "config-sample.json" to "config.json" and edit it to match to your project (user list is the most important part, look into SOURCE_FILE at "user_roles" line to find Assembla user's ID)
 
