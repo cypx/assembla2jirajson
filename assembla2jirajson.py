@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import a2j_config
 import sys
 import json
 import re
@@ -8,33 +9,27 @@ import re
 data_input = []
 data_output = []
 
+if len(sys.argv)<3 or len(sys.argv)>4:
+	print "Error incorrect argument number"
+	print "Usage: "+sys.argv[0]+"<source_file> <destination_file> (Optionnal |<attachement_url>)"
+	exit()
+
 file_input = sys.argv[1]
 file_output = sys.argv[2]
-attachement_url = sys.argv[3]
 
-workflow_conversion = {
-	"New":"Open",
-	"In progress":"In Progress",
-	"Invalid":"Closed",
-	"Fixed":"Resolved",
-	"To test":"In Progress",
-	"Waiting information":"Open",
-	"To implement":"Open",
-	"Duplicate":"Closed",
-	"Test pending":"Open",
-	"Waiting subtask treatment":"Open",
-	"Waiting deploy":"Open" }
+if len(sys.argv)==4:
+	attachement_url = sys.argv[3]
+else:
+	attachement_url = ""
 
-link_conversion = {
-	0:"parent of",
-	1:"child of",
-	2:"relates to",
-	3:"duplicates",
-	4:"blocks",
-	5:"blocks",
-	6:"is blocked by" }
+#load config file
+config = json.loads(open('config.json').read())
+link_conversion = config["link_conversion"]
+workflow_conversion = config["workflow_conversion"]
+user_conversion = config["user_conversion"]
 
-input_field = ['users, ',
+input_field = [
+	'user_roles, ',
 	'spaces, ',
 	'milestones, ',
 	'ticket_statuses, ',
@@ -71,12 +66,12 @@ for s in input_field:
 
 # Some function to return JIRA association and convert value between Assembla and Jira
 
-def reporter_login(id,input_dict):
-	name=""
-	for element in input_dict[0]["users"]:
+def reporter_login(id,user_dict):
+	login=""
+	for element in user_dict:
 		if element["id"] == id:
-			name=element["login"]
-	return name
+			login=element["login"]
+	return login
 
 def ticket_milestone(id,input_dict):
 	milestone=""
@@ -99,7 +94,7 @@ def ticket_key (id):
 			key=space_key(element["space_id"])+'-'+str(element["number"])
 	return key
 
-# we user "workflow_conversion" parameter for mapping assembla workflow to jira workflow
+# we use "workflow_conversion" parameter for mapping assembla workflow to jira workflow
 # if a status is not present in "workflow_conversion" we use internal assembla state
 def ticket_status(id,input_dict):
 	jira_name=""
@@ -121,15 +116,16 @@ def ticket_priority(id):
 #Convert input string according to JSON encoding
 
 users_output = ''
-for i, element in enumerate(data_input[0]["users"]):
+for i, element in enumerate(user_conversion):
 	users_output += '{"name":'+json.dumps(element["login"])+','
 	users_output += '"fullname": '+json.dumps(element["fullname"])+'}'
-	if i < len(data_input[0]["users"])-1:
+	if i < len(user_conversion)-1:
 		users_output += ','
+
 
 links_output = ''
 for i, element in enumerate(data_input[8]["ticket_associations"]):
-	links_output += '{"name":'+json.dumps(link_conversion[element["relationship"]])+','
+	links_output += '{"name":'+json.dumps(link_conversion[str(element["relationship"])])+','
 	links_output += '"sourceId":'+json.dumps(ticket_key(element["ticket1_id"]))+','
 	links_output += '"destinationId":'+json.dumps(ticket_key(element["ticket2_id"]))+'}'
 	if i < len(data_input[8]["ticket_associations"])-1:
@@ -164,7 +160,7 @@ for element in data_input[7]["ticket_comments"]:
 			comments_output[ticket_id] = ''
 		else:
 			comments_output[ticket_id] += ','
-		comments_output[ticket_id] += '{"author":'+json.dumps(reporter_login(element["user_id"],data_input))+','
+		comments_output[ticket_id] += '{"author":'+json.dumps(reporter_login(element["user_id"],user_conversion))+','
 		comments_output[ticket_id] += '"body":'+json.dumps(element["comment"])+','
 		comments_output[ticket_id] += '"created":"'+element["created_on"]+'"}'
 
@@ -176,7 +172,7 @@ for element in data_input[9]["documents"]:
 	else:
 		attachments_output[ticket_id] += ','
 	attachments_output[ticket_id] += '{"name" :'+json.dumps(element["name"])+','
-	attachments_output[ticket_id] += '"attacher":'+json.dumps(reporter_login(element["created_by"],data_input))+','
+	attachments_output[ticket_id] += '"attacher":'+json.dumps(reporter_login(element["created_by"],user_conversion))+','
 	attachments_output[ticket_id] += '"created":'+json.dumps(element["created_at"])+','
 	if element["description"] is not None:
 		attachments_output[ticket_id] += '"description":'+json.dumps(element["description"])+','
@@ -192,8 +188,8 @@ for element in data_input[4]["tickets"]:
 	issues_output[space_id] += '{"summary":'+json.dumps(element["summary"])+','
 	issues_output[space_id] += '"description":'+json.dumps(element["description"])+','
 	issues_output[space_id] += '"status":'+json.dumps(ticket_status(element["ticket_status_id"],data_input))+','
-	issues_output[space_id] += '"reporter":'+json.dumps(reporter_login(element["reporter_id"],data_input))+','
-	issues_output[space_id] += '"assignee":'+json.dumps(reporter_login(element["assigned_to_id"],data_input))+','
+	issues_output[space_id] += '"reporter":'+json.dumps(reporter_login(element["reporter_id"],user_conversion))+','
+	issues_output[space_id] += '"assignee":'+json.dumps(reporter_login(element["assigned_to_id"],user_conversion))+','
 	issues_output[space_id] += '"created":"'+element["created_on"]+'",'
 	if element["milestone_id"] is not None:
 		issues_output[space_id] += '"fixedVersions":['+json.dumps(ticket_milestone(element["milestone_id"],data_input))+'],'

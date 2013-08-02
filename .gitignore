@@ -42,3 +42,6 @@ test
 
 # Sublime Text
 *.sublime-workspace
+
+# project config file
+config.json

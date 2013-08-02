@@ -1,0 +1,35 @@
+{
+    "user_conversion": [
+        {
+            "id":"Iethoo5ezah0lah7Iyohno",
+            "login":"bob.smith",
+            "fullname":"Bob Smith"
+        },
+        {
+            "id":"Ehugik0eeshie9iefeeriX",
+            "login":"jessica.brown",
+            "fullname":"Jessica Brown"
+        }
+    ],
+
+    "workflow_conversion": {
+        "New":"Open",
+        "In progress":"In Progress",
+        "Invalid":"Closed",
+        "Fixed":"Resolved",
+        "Waiting information":"Open",
+        "To implement":"Open",
+        "Duplicate":"Closed",
+        },
+
+    "link_conversion": {
+    "0":"parent of",
+    "1":"child of",
+    "2":"relates to",
+    "3":"duplicates",
+    "4":"blocks",
+    "5":"blocks",
+    "6":"is blocked by"
+    }
+
+}
