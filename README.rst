@@ -19,6 +19,7 @@ All other files contained into multiple subfolder match to your Assembla project
 To be imported, this file need to be put into the root of an unique folder, under Linux (and probably MacOS) this could be made with the following command:
 
  .. code-block:: bash
+
     $ find /path_where_you_extract_content -type f -exec mv '{}' ./ \;
 
 Now move this folder with all this file into a location accessible by http from you jira install, for exemple:
@@ -29,6 +30,7 @@ Copy "config-sample.json" to "config.json" and edit it to match to your project 
 You are now ready to run the script
 
  .. code-block:: bash
+
     $ python assembla2jirajson.py SOURCE_FILE DESTINATION_FILE URL_OF_YOUR_CONTENT
 
 Finally, you can log into JIRA and go to "Administration > System" .
