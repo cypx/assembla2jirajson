@@ -25,6 +25,15 @@ workflow_conversion = {
 	"Waiting subtask treatment":"Open",
 	"Waiting deploy":"Open" }
 
+link_conversion = {
+	0:"parent of",
+	1:"child of",
+	2:"relates to",
+	3:"duplicates",
+	4:"blocks",
+	5:"blocks",
+	6:"is blocked by" }
+
 input_field = ['users, ',
 	'spaces, ',
 	'milestones, ',
@@ -83,6 +92,13 @@ def space_key (id):
 			key=element["name"]
 	return key
 
+def ticket_key (id):
+	key=""
+	for element in data_input[4]["tickets"]:
+		if element["id"] == id:
+			key=space_key(element["space_id"])+'-'+str(element["number"])
+	return key
+
 # we user "workflow_conversion" parameter for mapping assembla workflow to jira workflow
 # if a status is not present in "workflow_conversion" we use internal assembla state
 def ticket_status(id,input_dict):
@@ -106,9 +122,19 @@ def ticket_priority(id):
 
 users_output = ''
 for i, element in enumerate(data_input[0]["users"]):
-	users_output += '{"name":"'+element["login"]+'","fullname": '+json.dumps(element["fullname"])+'}'
+	users_output += '{"name":'+json.dumps(element["login"])+','
+	users_output += '"fullname": '+json.dumps(element["fullname"])+'}'
 	if i < len(data_input[0]["users"])-1:
 		users_output += ','
+
+links_output = ''
+for i, element in enumerate(data_input[8]["ticket_associations"]):
+	links_output += '{"name":'+json.dumps(link_conversion[element["relationship"]])+','
+	links_output += '"sourceId":'+json.dumps(ticket_key(element["ticket1_id"]))+','
+	links_output += '"destinationId":'+json.dumps(ticket_key(element["ticket2_id"]))+'}'
+	if i < len(data_input[8]["ticket_associations"])-1:
+		links_output += ','
+
 
 versions_output = {}
 for element in data_input[2]["milestones"]:
@@ -122,9 +148,13 @@ for element in data_input[2]["milestones"]:
 	else:
 		releaseDate=str(element["due_date"])+'T00:00:00+00:00'
 	if space_id not in versions_output:
-		versions_output[space_id] =  '{"name":'+json.dumps(element["title"])+',"released":'+released+',"releaseDate":"'+releaseDate+'"}'
+		versions_output[space_id] = '{"name":'+json.dumps(element["title"])+','
+		versions_output[space_id] += '"released":'+released+','
+		versions_output[space_id] += '"releaseDate":"'+releaseDate+'"}'
 	else:
-		versions_output[space_id] +=  ',{"name":'+json.dumps(element["title"])+',"released":'+released+',"releaseDate":"'+releaseDate+'"}'
+		versions_output[space_id] += ',{"name":'+json.dumps(element["title"])+','
+		versions_output[space_id] += '"released":'+released+','
+		versions_output[space_id] += '"releaseDate":"'+releaseDate+'"}'
 
 comments_output = {}
 for element in data_input[7]["ticket_comments"]:
@@ -179,7 +209,7 @@ for element in data_input[4]["tickets"]:
 	if element["id"] in attachments_output:
 		issues_output[space_id] += '"attachments":['+attachments_output[element["id"]]+'],'
 	issues_output[space_id] += '"key":"'+space_key(space_id)+'-'+str(element["number"])+'",'
-	issues_output[space_id] += '"externalId":"'+str(element["number"])+'"}'
+	issues_output[space_id] += '"externalId":"'+space_key(space_id)+'-'+str(element["number"])+'"}'
 
 project_output = ''
 for i, element in enumerate(data_input[1]["spaces"]):
@@ -195,7 +225,7 @@ for i, element in enumerate(data_input[1]["spaces"]):
 
 #Create JSON data and write it to export file
 
-data_output.append(json.loads('{"users": ['+users_output+'],"projects": ['+project_output+']}'))
+data_output.append(json.loads('{"users": ['+users_output+'],"links": ['+links_output+'],"projects": ['+project_output+']}'))
 
 with open(file_output, 'wb') as f:
 	f.write((json.dumps(data_output))[1:-1])
