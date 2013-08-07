@@ -118,6 +118,8 @@ def ticket_priority(id):
 users_output = ''
 for i, element in enumerate(user_conversion):
 	users_output += '{"name":'+json.dumps(element["login"])+','
+	if "email" in element:
+		users_output += '"email":'+json.dumps(element["email"])+','
 	users_output += '"fullname": '+json.dumps(element["fullname"])+'}'
 	if i < len(user_conversion)-1:
 		users_output += ','
@@ -214,8 +216,7 @@ for i, element in enumerate(data_input[1]["spaces"]):
 	if element["description"] != "":
 		project_output += '"description":'+json.dumps(element["description"])+','
 	project_output += '"versions":['+versions_output[element["id"]]+'],'
-	project_output += '"issues":['+issues_output[element["id"]]+'],'
-	project_output += '"components": ["Component","AnotherComponent"]}'
+	project_output += '"issues":['+issues_output[element["id"]]+']}'
 	if i < len(data_input[1]["spaces"])-1:
 		project_output += ','
 
