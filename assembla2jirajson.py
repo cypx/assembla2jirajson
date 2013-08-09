@@ -38,7 +38,8 @@ input_field = [
 	'user_tasks, ',
 	'ticket_comments, ',
 	'ticket_associations, ',
-	'documents, ']
+	'documents, ',
+	'document_versions, ']
 
 input_dict = {}
 
@@ -157,7 +158,8 @@ for element in data_input[2]["milestones"]:
 comments_output = {}
 for element in data_input[7]["ticket_comments"]:
 	ticket_id=element["ticket_id"]
-	if element["comment"] != '':
+	# we do not import empty comment created by assembla to notify user actions
+	if (element["comment"] is not None) and ((element["comment"] != "")):
 		if ticket_id not in comments_output:
 			comments_output[ticket_id] = ''
 		else:
@@ -166,19 +168,37 @@ for element in data_input[7]["ticket_comments"]:
 		comments_output[ticket_id] += '"body":'+json.dumps(element["comment"])+','
 		comments_output[ticket_id] += '"created":"'+element["created_on"]+'"}'
 
+
+attachments_version_output = {}
+for element in data_input[10]["document_versions"]:
+	document_id=element["document_id"]
+	if document_id not in attachments_version_output:
+		attachments_version_output[document_id] = []
+	attachments_version_output[document_id].append(element["version"])
+
 attachments_output = {}
 for element in data_input[9]["documents"]:
 	ticket_id=element["ticket_id"]
-	if ticket_id not in attachments_output:
-		attachments_output[ticket_id] = ''
-	else:
-		attachments_output[ticket_id] += ','
-	attachments_output[ticket_id] += '{"name" :'+json.dumps(element["name"])+','
-	attachments_output[ticket_id] += '"attacher":'+json.dumps(reporter_login(element["created_by"],user_conversion))+','
-	attachments_output[ticket_id] += '"created":'+json.dumps(element["created_at"])+','
-	if element["description"] is not None:
-		attachments_output[ticket_id] += '"description":'+json.dumps(element["description"])+','
-	attachments_output[ticket_id] += '"uri":"'+attachement_url+element["id"]+'_1"}'
+	document_id=element["id"]
+	version_list=attachments_version_output[document_id]
+	for version in version_list:
+		if ticket_id not in attachments_output:
+			attachments_output[ticket_id] = ''
+		else:
+			attachments_output[ticket_id] += ','
+		if 	element["name"] in attachments_output[ticket_id]:
+			split_name= element["name"].split(".")
+			new_name = ".".join(split_name[0:-1])
+			new_name += element["created_at"].replace('-', '').replace('T', '').replace(':', '')[0:14]
+			new_name += "."+".".join(split_name[-1:])
+			attachments_output[ticket_id] += '{"name" :'+json.dumps(new_name)+','
+		else:
+			attachments_output[ticket_id] += '{"name" :'+json.dumps(element["name"])+','
+		attachments_output[ticket_id] += '"attacher":'+json.dumps(reporter_login(element["created_by"],user_conversion))+','
+		attachments_output[ticket_id] += '"created":'+json.dumps(element["created_at"])+','
+		if element["description"] is not None:
+			attachments_output[ticket_id] += '"description":'+json.dumps(element["description"])+','
+		attachments_output[ticket_id] += '"uri":"'+attachement_url+element["id"]+'_'+str(version)+'"}'
 
 issues_output = {}
 for element in data_input[4]["tickets"]:
